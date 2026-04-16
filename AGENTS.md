@@ -4,8 +4,8 @@
 
 Docker Compose setup for llama.cpp with CUDA support, optimized for running LLM models on GPU. The project builds a Docker container with llama.cpp server compiled with CUDA acceleration and provides configuration files for various Gemma 4 model quantizations.
 
-- **Hardware:** NVIDIA GTX 1060 6GB, 12GB RAM, 6 cores
-- **System:** Debian 13 (trixie) — remote server
+- **Hardware:** NVIDIA RTX 3060 12GB, 128GB RAM, 28-core Xeon E5-2697
+- **System:** Linux (Arch) — local server
 - **llama.cpp:** PR #21343 + PR #20050 patch (KV cache retry fix)
 - **CUDA:** 12.4
 
@@ -256,12 +256,13 @@ ssh ag@192.168.200.38 "docker logs llama-llama-server-1 --tail 10 | grep 'eval t
 ssh ag@192.168.200.38 "docker logs llama-llama-server-1 --tail 20 | grep -iE 'kv|cache|batch|error|failed'"
 ```
 
-### Expected Results (GTX 1060 6GB)
+### Expected Results (RTX 3060 12GB)
 
 | Config | Tokens/sec | Notes |
 |--------|------------|-------|
-| Q5_K_M | ~24 | Current best |
-| Q6_K | ~22.7 | Slightly slower |
+| Q5_K_M (opencode, 128K) | ~20-30 | opencode config, single user |
+| Q5_K_M (64K) | ~24 | bartowski config |
+| Q6_K (64K) | ~22.7 | Slightly slower |
 
 ### VRAM Check
 
@@ -395,17 +396,17 @@ For any changes that affect the server:
 
 ## Performance Notes
 
-1. Use Q4/Q5 quantizations for GTX 1060 6GB
-2. Set NGLAYERS according to available VRAM
-3. Use `--fit off` to disable auto-VRAM fitting
-4. Use Q4 KV cache to save VRAM
+1. Q5_K_M (bartowski imatrix) gives best quality/speed balance on RTX 3060 12GB
+2. NGLAYERS=40 puts all transformer layers on GPU; MoE experts stay on CPU via exps=CPU
+3. Use Q4 KV cache (CACHE_TYPE_K/V=q4_0) to fit 128K context in 12GB VRAM
+4. Set THREADS=20 to utilize 28-core Xeon for CPU-side MoE expert computation
+5. For opencode use configs/gemma4-e4b-q5-bartowski-opencode.env (128K ctx, PARALLEL=1)
 
 ## Known Constraints
 
-- **VRAM Limited** — GTX 1060 6GB can only run Q4-Q6 quantizations
-- **Context Size** — Limited by VRAM (32K-64K typical)
+- **Context vs Quality** — 128K context requires Q4 KV cache; use Q8 KV cache if limiting to 32K
+- **MoE on CPU** — Expert weights on CPU adds latency vs full GPU; tradeoff for large context
 - **No SSL** — Server runs on HTTP (local network only)
-- **Remote Access** — Requires SSH access to 192.168.200.38
 
 ## Agent Instructions
 
