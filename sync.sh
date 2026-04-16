@@ -20,7 +20,7 @@
 set -e
 
 # Configuration
-SERVER="ag@192.168.200.38"
+SERVER="ag@127.0.0.1"
 REMOTE_DIR="~/llama"
 LOCAL_DIR="$(cd "$(dirname "$0")" && pwd)"
 

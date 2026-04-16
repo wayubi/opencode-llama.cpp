@@ -4,10 +4,10 @@ Docker Compose setup for llama.cpp with CUDA support, optimized for running LLM 
 
 ## Hardware
 
-- **VM:** Debian 13 (trixie)
-- **GPU:** NVIDIA GTX 1060 6GB
-- **RAM:** 12GB
-- **CPU:** 6 cores
+- **System:** Linux (Arch) — local server
+- **GPU:** NVIDIA RTX 3060 12GB
+- **RAM:** 128GB
+- **CPU:** Intel Xeon E5-2697 v3 (14 cores / 28 threads)
 
 ## Quick Start
 
@@ -16,7 +16,7 @@ Docker Compose setup for llama.cpp with CUDA support, optimized for running LLM 
 docker compose up -d --build
 
 # Check status
-curl http://192.168.200.38:8089/health
+curl http://127.0.0.1:8089/health
 
 # View logs
 docker compose logs -f
@@ -52,7 +52,11 @@ docker compose --env-file configs/gemma4-26b-unsloth.env up -d
 | `FLASHATTN` | Flash Attention | `on`, `off`, `auto` |
 | `BATCH` | Batch size | `256` |
 | `UBATCH` | Physical batch | `256` |
-| `THREADS` | CPU threads | `6` |
+| `THREADS` | CPU threads | `20` |
+| `THREADS_BATCH` | Batch CPU threads | `20` |
+| `PARALLEL` | Parallel request slots | `1` |
+| `CACHE_TYPE_K` | KV cache type (K) | `q4_0` |
+| `CACHE_TYPE_V` | KV cache type (V) | `q4_0` |
 
 ## Parameters Explained
 
@@ -63,10 +67,14 @@ docker compose --env-file configs/gemma4-26b-unsloth.env up -d
 | `-c` | Context size (tokens) |
 | `-ngl` | Layers offloaded to GPU |
 | `-ot exps=CPU` | Keep MoE experts in CPU (saves VRAM) |
-| `-fa` | Flash Attention (off for GTX 1060) |
+| `-fa` | Flash Attention |
 | `-b` / `-ub` | Batch sizes |
 | `-t` | CPU threads |
+| `-tb` | Batch CPU threads |
+| `--parallel` | Parallel request slots |
+| `-ctk` / `-ctv` | KV cache quantization type |
 | `--mlock` | Lock model in RAM |
+| `--no-mmap` | Disable memory-mapped I/O |
 | `--fit off` | Disable auto-fit to VRAM |
 
 ## Available Configs
@@ -95,12 +103,20 @@ docker compose --env-file configs/gemma4-26b-unsloth.env up -d
 - GPU layers: 30
 - VRAM: ~6GB
 
+### configs/gemma4-e4b-q5-bartowski-opencode.env
+- Model: bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M
+- Context: 128K
+- GPU layers: 42 (all transformer layers)
+- Flash Attention: on
+- Parallel slots: 1 (single-user, dedicated context)
+- VRAM: ~5.7GB
+- Optimized for opencode/long-session use
+
 ### configs/gemma4-26b-unsloth.env
 - Model: unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M (MoE)
 - Context: 32K
 - GPU layers: 30 (partial offload)
 - VRAM: ~5GB / RAM: ~12GB
-- Uwagi: MoE model z chain-of-thinking
 
 ## OpenWebUI Configuration
 
@@ -112,7 +128,7 @@ Konfiguracja dla OpenWebUI / Open AI:
     "npm": "@ai-sdk/openai-compatible",
     "name": "llama.cpp (remote pve2)",
     "options": {
-      "baseURL": "http://192.168.200.38:8089/v1",
+      "baseURL": "http://127.0.0.1:8089/v1",
       "toolParser": [
         { "type": "raw-function-call" },
         { "type": "json" }
@@ -203,13 +219,13 @@ docker compose up -d
 
 ## API Endpoints
 
-- **WebUI:** http://192.168.200.38:8089
-- **Health:** http://192.168.200.38:8089/health
-- **OpenAI API:** http://192.168.200.38:8089/v1/chat/completions
+- **WebUI:** http://127.0.0.1:8089
+- **Health:** http://127.0.0.1:8089/health
+- **OpenAI API:** http://127.0.0.1:8089/v1/chat/completions
 
 ### Example API call
 ```bash
-curl http://192.168.200.38:8089/v1/chat/completions \
+curl http://127.0.0.1:8089/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [{"role": "user", "content": "Hello!"}],
@@ -219,6 +235,6 @@ curl http://192.168.200.38:8089/v1/chat/completions \
 
 ## Build Info
 
-- **llama.cpp:** PR #21343
+- **llama.cpp:** PR #21343 + PR #20050 patch (KV cache retry fix)
 - **CUDA:** 12.4
-- **Base image:** nvidia/cuda:12.4.0-devel-ubuntu22.04
+- **Base image:** nvidia/cuda:12.4.0-devel-ubuntu22.04 (builder), ubuntu:24.04 (runtime)

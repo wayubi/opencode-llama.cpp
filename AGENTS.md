@@ -4,7 +4,7 @@
 
 Docker Compose setup for llama.cpp with CUDA support, optimized for running LLM models on GPU. The project builds a Docker container with llama.cpp server compiled with CUDA acceleration and provides configuration files for various Gemma 4 model quantizations.
 
-- **Hardware:** NVIDIA RTX 3060 12GB, 128GB RAM, 28-core Xeon E5-2697
+- **Hardware:** NVIDIA RTX 3060 12GB, 128GB RAM, Intel Xeon E5-2697 v3 (14 cores / 28 threads)
 - **System:** Linux (Arch) — local server
 - **llama.cpp:** PR #21343 + PR #20050 patch (KV cache retry fix)
 - **CUDA:** 12.4
@@ -27,17 +27,17 @@ Docker Compose setup for llama.cpp with CUDA support, optimized for running LLM 
 The project follows a single-service Docker architecture:
 
 1. **llama-server** — Docker container running llama.cpp server with CUDA
-2. **Remote Deployment** — Server runs on remote host (192.168.200.38)
+2. **Remote Deployment** — Server runs on remote host (127.0.0.1)
 3. **Sync Mechanism** — rsync + SSH for deployment (sync.sh)
 4. **Configuration** — Environment-based (configs/*.env files)
 
 ```
 ┌─────────────┐      rsync       ┌──────────────────┐
 │  Local Dev  │ ─────────────► │  Remote Server    │
-│  (llama/)   │                │  (ag@192.168.200.38) │
+│  (llama/)   │                │  (ag@127.0.0.1) │
 └─────────────┘                │  - Docker         │
                                │  - llama-server  │
-                               │  - GPU (GTX1060) │
+                               │  - GPU (RTX3060) │
                                └──────────────────┘
 ```
 
@@ -61,6 +61,7 @@ llama/
     ├── gemma4-e4b-q6-bartowski.env
     ├── gemma4-e4b-q6-bartowski-L.env
     ├── gemma4-e4b-q8-unsloth.env
+    ├── gemma4-e4b-q5-bartowski-opencode.env
     ├── gemma4-26b-unsloth.env
     └── test-gemma4.env
 ```
@@ -133,14 +134,14 @@ cp configs/gemma4-e4b-q4-unsloth.env .env
 docker compose up -d
 
 # Check health
-curl http://192.168.200.38:8089/health
+curl http://127.0.0.1:8089/health
 ```
 
 ### Using sync.sh
 
 ```bash
 # Start with specific config (on remote)
-ssh ag@192.168.200.38 "cd ~/llama && docker compose --env-file configs/gemma4-e4b-q5-bartowski.env up -d"
+ssh ag@127.0.0.1 "cd ~/llama && docker compose --env-file configs/gemma4-e4b-q5-bartowski.env up -d"
 ```
 
 ## Environment Variables
@@ -156,9 +157,11 @@ ssh ag@192.168.200.38 "cd ~/llama && docker compose --env-file configs/gemma4-e4
 | FLASHATTN | off | Flash Attention |
 | BATCH | 256 | Batch size |
 | UBATCH | 256 | Physical batch |
-| THREADS | 6 | CPU threads |
-| CACHE_TYPE_K | f16 | KV cache type (K) |
-| CACHE_TYPE_V | f16 | KV cache type (V) |
+| THREADS | 20 | CPU threads |
+| THREADS_BATCH | 20 | Batch CPU threads |
+| PARALLEL | 1 | Parallel request slots |
+| CACHE_TYPE_K | q4_0 | KV cache type (K) |
+| CACHE_TYPE_V | q4_0 | KV cache type (V) |
 
 ## Configuration Files
 
@@ -172,7 +175,8 @@ ssh ag@192.168.200.38 "cd ~/llama && docker compose --env-file configs/gemma4-e4
 | gemma4-e4b-q8-unsloth.env | unsloth/gemma-4-E4B-it-GGUF:Q8_K_M | 64K | 30 | ~6GB | - |
 | gemma4-e4b-q5-bartowski.env | bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M | 64K | 42 | ~5.7GB | **~24** |
 | gemma4-e4b-q6-bartowski.env | bartowski/google_gemma-4-E4B-it-GGUF:Q6_K | 64K | 42 | ~6.3GB | ~22.7 |
-| gemma4-e4b-q6-bartowski-L.env | bartowski/google_gemma-4-E4B-it-GGUF:Q6_K_L | 64K | 25 | ~7.2GB | OOM (za dużo VRAM) |
+| gemma4-e4b-q6-bartowski-L.env | bartowski/google_gemma-4-E4B-it-GGUF:Q6_K_L | 64K | 25 | ~7.2GB | OOM |
+| gemma4-e4b-q5-bartowski-opencode.env | bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M | 128K | 42 | ~5.7GB | ~20-30 |
 | gemma4-26b-unsloth.env | unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M | 32K | 30 | ~5GB | - |
 
 ### Naming Convention
@@ -201,7 +205,7 @@ No formal test suite exists. To verify the setup:
 ./sync.sh health
 
 # Test API
-curl http://192.168.200.38:8089/v1/chat/completions \
+curl http://127.0.0.1:8089/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [{"role": "user", "content": "Hello!"}],
@@ -219,21 +223,21 @@ To test model speed (tokens per second):
 # Sync and start with specific config
 cd /home/picon/workspace/llama
 ./sync.sh push
-ssh ag@192.168.200.38 "cd ~/llama && docker compose --env-file configs/gemma4-e4b-q5-bartowski.env up -d"
+ssh ag@127.0.0.1 "cd ~/llama && docker compose --env-file configs/gemma4-e4b-q5-bartowski.env up -d"
 ```
 
 #### 2. Wait for Model Load
 
 ```bash
 # Check health - wait until "status": "ok"
-ssh ag@192.168.200.38 "curl -s http://localhost:8089/health"
+ssh ag@127.0.0.1 "curl -s http://localhost:8089/health"
 ```
 
 #### 3. Run Performance Test
 
 ```bash
 # Test generation speed (500 tokens)
-ssh ag@192.168.200.38 'curl -s http://localhost:8089/v1/chat/completions \
+ssh ag@127.0.0.1 'curl -s http://localhost:8089/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d "{\"messages\": [{\"role\": \"user\", \"content\": \"Napisz krótką historię o smoku (około 500 znaków)\"}], \"model\": \"gemma-4\", \"max_tokens\": 500, \"temperature\": 0.7}"'
 ```
@@ -246,14 +250,14 @@ From the response JSON, extract:
 
 Or from server logs:
 ```bash
-ssh ag@192.168.200.38 "docker logs llama-llama-server-1 --tail 10 | grep 'eval time'"
+ssh ag@127.0.0.1 "docker logs llama-llama-server-1 --tail 10 | grep 'eval time'"
 ```
 
 #### 5. Verify No KV Cache Errors
 
 ```bash
 # Check for errors
-ssh ag@192.168.200.38 "docker logs llama-llama-server-1 --tail 20 | grep -iE 'kv|cache|batch|error|failed'"
+ssh ag@127.0.0.1 "docker logs llama-llama-server-1 --tail 20 | grep -iE 'kv|cache|batch|error|failed'"
 ```
 
 ### Expected Results (RTX 3060 12GB)
@@ -267,7 +271,7 @@ ssh ag@192.168.200.38 "docker logs llama-llama-server-1 --tail 20 | grep -iE 'kv
 ### VRAM Check
 
 ```bash
-ssh ag@192.168.200.38 "nvidia-smi --query-gpu=memory.used,memory.total --format=csv"
+ssh ag@127.0.0.1 "nvidia-smi --query-gpu=memory.used,memory.total --format=csv"
 ```
 
 ## CI/CD
