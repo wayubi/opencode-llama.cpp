@@ -79,29 +79,43 @@ docker compose --env-file configs/gemma4-26b-unsloth.env up -d
 
 ## Available Configs
 
-### configs/gemma4-e4b-q4-unsloth.env
-- Model: unsloth/gemma-4-E4B-it-GGUF:Q4_K_M
-- Context: 32K
-- GPU layers: 50
-- VRAM: ~4.5GB
+### configs/qwen35-35b-a3b-q4-unsloth.env
+- Model: unsloth/Qwen3.5-35B-A3B-GGUF:UD-Q4_K_XL (MoE + SSM hybrid)
+- Context: 131K (native 262K; cheap — only 10 attention layers have KV cache, SSM layers don't)
+- GPU layers: all (~2GB backbone on GPU, ~19GB experts in RAM)
+- Multimodal: vision encoder included (images supported)
+- Speed: ~15-20 t/s
 
-### configs/gemma4-e4b-q5-unsloth.env
-- Model: unsloth/gemma-4-E4B-it-GGUF:Q5_K_M
-- Context: 64K
-- GPU layers: 42
-- VRAM: ~5GB
+### configs/qwen3coder-30b-a3b-q6-unsloth.env
+- Model: unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q6_K (MoE)
+- Context: 131K (native)
+- GPU layers: all (~3-4GB backbone on GPU, ~25GB experts in RAM)
+- Dedicated coding model — Hermes tool call format, opencode-compatible
+- Speed: ~15-20 t/s
 
-### configs/gemma4-e4b-q6-unsloth.env
-- Model: unsloth/gemma-4-E4B-it-GGUF:Q6_K
-- Context: 64K
-- GPU layers: 15
-- VRAM: ~5.5GB
+### configs/phi4-14b-q4-bartowski.env
+- Model: bartowski/microsoft_Phi-4-GGUF:Q4_K_M
+- Context: 16K (native)
+- GPU layers: all 40 (dense, fully on GPU)
+- VRAM: ~9.5GB
+- Tool call support: unconfirmed — test before opencode use
 
-### configs/gemma4-e4b-q8-unsloth.env
-- Model: unsloth/gemma-4-E4B-it-GGUF:Q8_K_M
-- Context: 64K
-- GPU layers: 30
-- VRAM: ~6GB
+### configs/gemma4-e4b-q6l-bartowski-opencode.env
+- Model: bartowski/google_gemma-4-E4B-it-GGUF:Q6_K_L
+- Context: 128K
+- GPU layers: 42 (all transformer layers)
+- Flash Attention: on
+- Parallel slots: 1 (single-user, dedicated context)
+- VRAM: ~7.2GB
+- Best quality option — fall back to Q6_K if OOM
+
+### configs/gemma4-e4b-q6-bartowski-opencode.env
+- Model: bartowski/google_gemma-4-E4B-it-GGUF:Q6_K
+- Context: 128K
+- GPU layers: 42 (all transformer layers)
+- Flash Attention: on
+- Parallel slots: 1 (single-user, dedicated context)
+- VRAM: ~6.3GB
 
 ### configs/gemma4-e4b-q5-bartowski-opencode.env
 - Model: bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M
@@ -110,7 +124,7 @@ docker compose --env-file configs/gemma4-26b-unsloth.env up -d
 - Flash Attention: on
 - Parallel slots: 1 (single-user, dedicated context)
 - VRAM: ~5.7GB
-- Optimized for opencode/long-session use
+- Faster alternative (~24 t/s vs ~22 t/s for Q6)
 
 ### configs/gemma4-26b-unsloth.env
 - Model: unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M (MoE)
