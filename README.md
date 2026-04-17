@@ -93,13 +93,6 @@ docker compose --env-file configs/gemma4-26b-unsloth.env up -d
 - Dedicated coding model — Hermes tool call format, opencode-compatible
 - Speed: ~15-20 t/s
 
-### configs/phi4-14b-q4-bartowski.env
-- Model: bartowski/microsoft_Phi-4-GGUF:Q4_K_M
-- Context: 16K (native)
-- GPU layers: all 40 (dense, fully on GPU)
-- VRAM: ~9.5GB
-- Tool call support: unconfirmed — test before opencode use
-
 ### configs/gemma4-e4b-q6l-bartowski-opencode.env
 - Model: bartowski/google_gemma-4-E4B-it-GGUF:Q6_K_L
 - Context: 128K

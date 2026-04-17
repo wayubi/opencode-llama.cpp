@@ -68,14 +68,6 @@
             "context": 131072,
             "output": 8192
           }
-        },
-        "phi4:14b": {
-          "name": "Phi-4 14B (Q4_K_M)",
-          "tool_call": true,
-          "limit": {
-            "context": 16384,
-            "output": 4096
-          }
         }
       }
     }

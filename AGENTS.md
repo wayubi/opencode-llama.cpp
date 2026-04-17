@@ -26,7 +26,6 @@ llama/
     ├── gemma4-e4b-q5-bartowski-opencode.env
     ├── gemma4-e4b-q6-bartowski-opencode.env
     ├── gemma4-e4b-q6l-bartowski-opencode.env
-    ├── phi4-14b-q4-bartowski.env
     ├── qwen35-35b-a3b-q4-unsloth.env
     └── qwen3coder-30b-a3b-q6-unsloth.env
 ```
@@ -41,7 +40,6 @@ llama/
 | gemma4-26b-unsloth.env | unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M | 128K | ~5GB + ~12GB RAM | - |
 | qwen3coder-30b-a3b-q6-unsloth.env | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q6_K | 128K | ~3-4GB + ~25GB RAM | ~15-20 |
 | qwen35-35b-a3b-q4-unsloth.env | unsloth/Qwen3.5-35B-A3B-GGUF:UD-Q4_K_XL | 131K | ~2GB + ~19GB RAM | ~15-20 |
-| phi4-14b-q4-bartowski.env | bartowski/microsoft_Phi-4-GGUF:Q4_K_M | 16K | ~9.5GB | ~30-35 |
 
 ## Environment Variables
 
@@ -131,7 +129,6 @@ Config: `opencode.json` — provider `llama` at `http://127.0.0.1:8089/v1`
 | gemma4:e4b-q5 | gemma4-e4b-q5-bartowski-opencode.env |
 | qwen3coder:30b | qwen3coder-30b-a3b-q6-unsloth.env |
 | qwen35:35b | qwen35-35b-a3b-q4-unsloth.env |
-| phi4:14b | phi4-14b-q4-bartowski.env |
 
 ## Git Workflow
 
