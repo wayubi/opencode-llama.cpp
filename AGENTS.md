@@ -24,20 +24,16 @@ llama/
 └── configs/
     ├── gemma4-26b-unsloth.env
     ├── gemma4-e4b-q5-bartowski-opencode.env
-    ├── gemma4-e4b-q6-bartowski-opencode.env
-    ├── gemma4-e4b-q6l-bartowski-opencode.env
-    ├── qwen35-35b-a3b-q4-unsloth.env
-    └── qwen3coder-30b-a3b-q6-unsloth.env
+    ├── qwen3coder-30b-a3b-q6-unsloth.env
+    └── qwen35-35b-a3b-q4-unsloth.env
 ```
 
 ## Available Configs
 
 | File | Model | Context | VRAM | t/s |
 |------|-------|---------|------|-----|
-| gemma4-e4b-q6l-bartowski-opencode.env | bartowski/google_gemma-4-E4B-it-GGUF:Q6_K_L | 128K | ~7.2GB | ~21 |
-| gemma4-e4b-q6-bartowski-opencode.env | bartowski/google_gemma-4-E4B-it-GGUF:Q6_K | 128K | ~6.3GB | ~22 |
-| gemma4-e4b-q5-bartowski-opencode.env | bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M | 128K | ~5.7GB | ~24 |
 | gemma4-26b-unsloth.env | unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M | 128K | ~5GB + ~12GB RAM | - |
+| gemma4-e4b-q5-bartowski-opencode.env | bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M | 128K | ~5.7GB | ~24 |
 | qwen3coder-30b-a3b-q6-unsloth.env | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q6_K | 128K | ~3-4GB + ~25GB RAM | ~15-20 |
 | qwen35-35b-a3b-q4-unsloth.env | unsloth/Qwen3.5-35B-A3B-GGUF:UD-Q4_K_XL | 131K | ~2GB + ~19GB RAM | ~15-20 |
 
@@ -80,10 +76,10 @@ llama/
 
 ```bash
 # Local
-docker compose --env-file configs/gemma4-e4b-q6l-bartowski-opencode.env up -d
+docker compose --env-file configs/gemma4-e4b-q5-bartowski-opencode.env up -d
 
 # Remote
-ssh ag@127.0.0.1 "cd ~/llama && docker compose --env-file configs/gemma4-e4b-q6l-bartowski-opencode.env up -d"
+ssh ag@127.0.0.1 "cd ~/llama && docker compose --env-file configs/gemma4-e4b-q5-bartowski-opencode.env up -d"
 
 # Health check
 curl http://127.0.0.1:8089/health
@@ -122,14 +118,12 @@ docker compose up -d --build
 
 Config: `opencode.json` — provider `llama` at `http://127.0.0.1:8089/v1`
 
-| opencode model ID | Config to load |
-|-------------------|----------------|
-| gemma4:e4b-q6l | gemma4-e4b-q6l-bartowski-opencode.env |
-| gemma4:e4b-q6 | gemma4-e4b-q6-bartowski-opencode.env |
-| gemma4:e4b-q5 | gemma4-e4b-q5-bartowski-opencode.env |
-| gemma4:26b | gemma4-26b-unsloth.env |
-| qwen3coder:30b | qwen3coder-30b-a3b-q6-unsloth.env |
-| qwen35:35b | qwen35-35b-a3b-q4-unsloth.env |
+| opencode model ID | Config to load                       |
+|-------------------|--------------------------------------|
+| gemma4:26b        | gemma4-26b-unsloth.env               |
+| gemma4:e4b-q5     | gemma4-e4b-q5-bartowski-opencode.env |
+| qwen3coder:30b    | qwen3coder-30b-a3b-q6-unsloth.env    |
+| qwen35:35b        | qwen35-35b-a3b-q4-unsloth.env        |
 
 ## Git Workflow
 

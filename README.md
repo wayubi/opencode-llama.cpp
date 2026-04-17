@@ -93,23 +93,6 @@ docker compose --env-file configs/gemma4-26b-unsloth.env up -d
 - Dedicated coding model — Hermes tool call format, opencode-compatible
 - Speed: ~15-20 t/s
 
-### configs/gemma4-e4b-q6l-bartowski-opencode.env
-- Model: bartowski/google_gemma-4-E4B-it-GGUF:Q6_K_L
-- Context: 128K
-- GPU layers: 42 (all transformer layers)
-- Flash Attention: on
-- Parallel slots: 1 (single-user, dedicated context)
-- VRAM: ~7.2GB
-- Best quality option — fall back to Q6_K if OOM
-
-### configs/gemma4-e4b-q6-bartowski-opencode.env
-- Model: bartowski/google_gemma-4-E4B-it-GGUF:Q6_K
-- Context: 128K
-- GPU layers: 42 (all transformer layers)
-- Flash Attention: on
-- Parallel slots: 1 (single-user, dedicated context)
-- VRAM: ~6.3GB
-
 ### configs/gemma4-e4b-q5-bartowski-opencode.env
 - Model: bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M
 - Context: 128K
