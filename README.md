@@ -13,7 +13,7 @@ Docker Compose setup for llama.cpp with CUDA support, optimized for running LLM 
 
 ```bash
 # Build and start
-docker compose up -d --build
+docker compose --env-file configs/gemma4-e4b-q5-bartowski-opencode.env up -d --build
 
 # Check status
 curl http://127.0.0.1:8089/health
@@ -24,126 +24,125 @@ docker compose logs -f
 
 ## Configuration
 
-### Using .env files
-
 ```bash
-# Use Gemma 4 (default)
-cp configs/gemma4-e4b-q4-unsloth.env .env
-docker compose up -d
+# Start with a specific config
+docker compose --env-file configs/gemma4-e4b-q5-bartowski-opencode.env up -d
 
-# Switch to Gemma 4 26B (MoE - partial offload)
-cp configs/gemma4-26b-unsloth.env .env
+# Or copy to .env
+cp configs/gemma4-e4b-q5-bartowski-opencode.env .env
 docker compose up -d
-
-# Or use --env-file directly
-docker compose --env-file configs/gemma4-26b-unsloth.env up -d
 ```
 
-### Environment Variables
+## Environment Variables
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `MODEL` | HuggingFace repo:quant | `ggml-org/gemma-4-E4B-it-GGUF:Q4_K_M` |
+| `MODEL` | HuggingFace repo:quant | `bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M` |
 | `PORT` | Server port | `8089` |
 | `HOST` | Listen address | `0.0.0.0` |
-| `CTX` | Context size | `32768` |
-| `NGLAYERS` | GPU layers (999=all, 0=CPU) | `50` |
-| `CPUMOE` | MoE experts on CPU | `exps=CPU` or empty |
-| `FLASHATTN` | Flash Attention | `on`, `off`, `auto` |
-| `BATCH` | Batch size | `256` |
-| `UBATCH` | Physical batch | `256` |
+| `CTX` | Context size | `131072` |
+| `NGLAYERS` | GPU layers (999=all, 0=CPU) | `999` |
+| `CPUMOE` | MoE experts on CPU | `exps=CPU` |
+| `FLASHATTN` | Flash Attention | `on`, `off` |
+| `BATCH` | Batch size | `1024` |
+| `UBATCH` | Physical batch | `512` |
 | `THREADS` | CPU threads | `20` |
 | `THREADS_BATCH` | Batch CPU threads | `20` |
 | `PARALLEL` | Parallel request slots | `1` |
 | `CACHE_TYPE_K` | KV cache type (K) | `q4_0` |
 | `CACHE_TYPE_V` | KV cache type (V) | `q4_0` |
+| `CHAT_TEMPLATE_KWARGS` | Jinja template kwargs | `{"enable_thinking": false}` |
+| `HF_TOKEN` | HuggingFace token for gated models | `hf_...` |
 
 ## Parameters Explained
 
 | Parameter | Description |
 |-----------|-------------|
 | `-hf` | Load model from HuggingFace |
-| `--jinja` | Enable Jinja chat template (required for Gemma) |
+| `--jinja` | Enable Jinja chat template |
 | `-c` | Context size (tokens) |
 | `-ngl` | Layers offloaded to GPU |
-| `-ot exps=CPU` | Keep MoE experts in CPU (saves VRAM) |
+| `-ot exps=CPU` | Keep MoE experts on CPU (saves VRAM) |
 | `-fa` | Flash Attention |
 | `-b` / `-ub` | Batch sizes |
-| `-t` | CPU threads |
-| `-tb` | Batch CPU threads |
+| `-t` / `-tb` | CPU threads / batch threads |
 | `--parallel` | Parallel request slots |
 | `-ctk` / `-ctv` | KV cache quantization type |
 | `--mlock` | Lock model in RAM |
 | `--no-mmap` | Disable memory-mapped I/O |
 | `--fit off` | Disable auto-fit to VRAM |
+| `--hf-token` | HuggingFace token for gated models |
+| `--chat-template-kwargs` | Pass JSON kwargs to Jinja chat template |
 
 ## Available Configs
 
-### configs/qwen35-35b-a3b-q4-unsloth.env
-- Model: unsloth/Qwen3.5-35B-A3B-GGUF:UD-Q4_K_XL (MoE + SSM hybrid)
-- Context: 131K (native 262K; cheap — only 10 attention layers have KV cache, SSM layers don't)
-- GPU layers: all (~2GB backbone on GPU, ~19GB experts in RAM)
-- Multimodal: vision encoder included (images supported)
-- Speed: ~15-20 t/s
-
-### configs/qwen3coder-30b-a3b-q6-unsloth.env
-- Model: unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q6_K (MoE)
-- Context: 131K (native)
-- GPU layers: all (~3-4GB backbone on GPU, ~25GB experts in RAM)
-- Dedicated coding model — Hermes tool call format, opencode-compatible
-- Speed: ~15-20 t/s
+### configs/gemma4-26b-unsloth.env
+- Model: unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M (MoE)
+- Context: 128K
+- GPU layers: all (backbone ~5-6GB on GPU, experts ~9GB RAM)
+- VRAM: ~5GB + ~9GB RAM
 
 ### configs/gemma4-e4b-q5-bartowski-opencode.env
 - Model: bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M
-- Context: 128K
+- Context: 128K (cheap — only 4 global attention layers scale with context due to SWA)
 - GPU layers: 42 (all transformer layers)
-- Flash Attention: on
-- Parallel slots: 1 (single-user, dedicated context)
 - VRAM: ~5.7GB
-- Faster alternative (~24 t/s vs ~22 t/s for Q6)
+- Speed: ~24 t/s
+- Recommended for opencode
 
-### configs/gemma4-26b-unsloth.env
-- Model: unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M (MoE)
-- Context: 32K
-- GPU layers: 30 (partial offload)
-- VRAM: ~5GB / RAM: ~12GB
+### configs/qwen3coder-30b-a3b-q6-unsloth.env
+- Model: unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q6_K (MoE)
+- Context: 128K
+- GPU layers: all (~3-4GB backbone on GPU, ~25GB experts in RAM)
+- Dedicated coding model — Hermes tool call format, opencode-compatible
+- Thinking mode disabled for faster responses
+- Speed: ~15-20 t/s
+
+### configs/qwen35-35b-a3b-q4-unsloth.env
+- Model: unsloth/Qwen3.5-35B-A3B-GGUF:UD-Q4_K_XL (MoE + SSM hybrid)
+- Context: 131K (native 262K; cheap — only 10 attention layers have KV cache)
+- GPU layers: all (~2GB backbone on GPU, ~19GB experts in RAM)
+- Multimodal: vision encoder included
+- Speed: ~15-20 t/s
 
 ## OpenWebUI Configuration
-
-Konfiguracja dla OpenWebUI / Open AI:
 
 ```json
 {
   "llama": {
     "npm": "@ai-sdk/openai-compatible",
-    "name": "llama.cpp (remote pve2)",
+    "name": "llama.cpp",
     "options": {
       "baseURL": "http://127.0.0.1:8089/v1",
       "toolParser": [
+        { "type": "hermes" },
         { "type": "raw-function-call" },
         { "type": "json" }
       ]
     },
     "models": {
-      "gemma4:e4b": {
-        "name": "Gemma 4 E4B",
-        "tool_call": true,
-        "limit": {
-          "context": 65536,
-          "output": 8192
-        },
-        "modalities": {
-          "input": ["text","image"],
-          "output": ["text"]
-        }
-      },
       "gemma4:26b": {
         "name": "Gemma 4 26B",
         "tool_call": true,
-        "limit": {
-          "context": 32768,
-          "output": 8192
-        }
+        "limit": { "context": 131072, "output": 8192 },
+        "modalities": { "input": ["text", "image"], "output": ["text"] }
+      },
+      "gemma4:e4b-q5": {
+        "name": "Gemma 4 E4B (Q5_K_M)",
+        "tool_call": true,
+        "limit": { "context": 131072, "output": 8192 },
+        "modalities": { "input": ["text", "image"], "output": ["text"] }
+      },
+      "qwen3coder:30b": {
+        "name": "Qwen3-Coder 30B-A3B",
+        "tool_call": true,
+        "limit": { "context": 131072, "output": 8192 }
+      },
+      "qwen35:35b": {
+        "name": "Qwen3.5 35B-A3B",
+        "tool_call": true,
+        "limit": { "context": 131072, "output": 8192 },
+        "modalities": { "input": ["text", "image"], "output": ["text"] }
       }
     }
   }
@@ -152,41 +151,20 @@ Konfiguracja dla OpenWebUI / Open AI:
 
 ## Sync Tool
 
-Użyj `sync.sh` do zarządzania serwerem zdalnym:
+Use `sync.sh` to manage the remote server:
 
 ```bash
-# Sync lokalne pliki -> serwer
-./sync.sh push
-
-# Sync + restart kontenera
-./sync.sh deploy
-
-# Sync + rebuild + restart
-./sync.sh rebuild
-
-# Zatrzymaj kontener
-./sync.sh stop
-
-# Uruchom kontener
-./sync.sh start
-
-# Restart kontenera
-./sync.sh restart
-
-# Status kontenera i GPU
-./sync.sh status
-
-# Sprawdź health
-./sync.sh health
-
-# Logi kontenera
-./sync.sh logs
-
-# SSH do serwera
-./sync.sh ssh
-
-# Pokaż aktualną konfigurację
-./sync.sh config
+./sync.sh push      # Sync local files to server
+./sync.sh deploy    # Sync + restart container
+./sync.sh rebuild   # Sync + full rebuild + restart
+./sync.sh stop      # Stop container
+./sync.sh start     # Start container
+./sync.sh restart   # Restart container
+./sync.sh status    # Container and GPU status
+./sync.sh health    # Health check
+./sync.sh logs      # Container logs
+./sync.sh ssh       # SSH to server
+./sync.sh config    # Show current config
 ```
 
 ## Troubleshooting

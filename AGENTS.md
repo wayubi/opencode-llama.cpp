@@ -118,12 +118,12 @@ docker compose up -d --build
 
 Config: `opencode.json` — provider `llama` at `http://127.0.0.1:8089/v1`
 
-| opencode model ID | Config to load                       |
-|-------------------|--------------------------------------|
-| gemma4:26b        | gemma4-26b-unsloth.env               |
-| gemma4:e4b-q5     | gemma4-e4b-q5-bartowski-opencode.env |
-| qwen3coder:30b    | qwen3coder-30b-a3b-q6-unsloth.env    |
-| qwen35:35b        | qwen35-35b-a3b-q4-unsloth.env        |
+| opencode model ID | Config to load |
+|-------------------|----------------|
+| gemma4:26b | gemma4-26b-unsloth.env |
+| gemma4:e4b-q5 | gemma4-e4b-q5-bartowski-opencode.env |
+| qwen3coder:30b | qwen3coder-30b-a3b-q6-unsloth.env |
+| qwen35:35b | qwen35-35b-a3b-q4-unsloth.env |
 
 ## Git Workflow
 
