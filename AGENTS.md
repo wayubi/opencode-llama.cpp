@@ -127,6 +127,7 @@ Config: `opencode.json` — provider `llama` at `http://127.0.0.1:8089/v1`
 | gemma4:e4b-q6l | gemma4-e4b-q6l-bartowski-opencode.env |
 | gemma4:e4b-q6 | gemma4-e4b-q6-bartowski-opencode.env |
 | gemma4:e4b-q5 | gemma4-e4b-q5-bartowski-opencode.env |
+| gemma4:26b | gemma4-26b-unsloth.env |
 | qwen3coder:30b | qwen3coder-30b-a3b-q6-unsloth.env |
 | qwen35:35b | qwen35-35b-a3b-q4-unsloth.env |
 
