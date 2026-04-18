@@ -24,6 +24,7 @@ llama/
 └── configs/
     ├── gemma4-26b-unsloth.env
     ├── gemma4-e4b-q5-bartowski-opencode.env
+    ├── glm47-flash-30b-a3b-q4km-unsloth.env
     ├── qwen3coder-30b-a3b-q6-unsloth.env
     └── qwen35-35b-a3b-q4-unsloth.env
 ```
@@ -34,6 +35,7 @@ llama/
 |------|-------|---------|------|-----|
 | gemma4-26b-unsloth.env | unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M | 128K | ~5GB + ~12GB RAM | - |
 | gemma4-e4b-q5-bartowski-opencode.env | bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M | 128K | ~5.7GB | ~24 |
+| glm47-flash-30b-a3b-q4km-unsloth.env | unsloth/GLM-4.7-Flash-GGUF:UD-Q4_K_XL | 198K | ~3-4GB + ~17.5GB RAM | ~15-20 |
 | qwen3coder-30b-a3b-q6-unsloth.env | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q6_K | 128K | ~3-4GB + ~25GB RAM | ~15-20 |
 | qwen35-35b-a3b-q4-unsloth.env | unsloth/Qwen3.5-35B-A3B-GGUF:UD-Q4_K_XL | 131K | ~2GB + ~19GB RAM | ~15-20 |
 
@@ -122,6 +124,7 @@ Config: `opencode.json` — provider `llama` at `http://127.0.0.1:8089/v1`
 |-------------------|----------------|
 | gemma4:26b | gemma4-26b-unsloth.env |
 | gemma4:e4b-q5 | gemma4-e4b-q5-bartowski-opencode.env |
+| glm47:flash | glm47-flash-30b-a3b-q4km-unsloth.env |
 | qwen3coder:30b | qwen3coder-30b-a3b-q6-unsloth.env |
 | qwen35:35b | qwen35-35b-a3b-q4-unsloth.env |
 

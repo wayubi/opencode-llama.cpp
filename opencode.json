@@ -25,6 +25,11 @@
           "limit": { "context": 131072, "output": 8192 },
           "modalities": { "input": ["text", "image"], "output": ["text"] }
         },
+        "glm47:flash": {
+          "name": "GLM-4.7-Flash 30B-A3B (UD-Q4_K_XL, MoE)",
+          "tool_call": true,
+          "limit": { "context": 202752, "output": 8192 }
+        },
         "qwen3coder:30b2": {
           "name": "Qwen3-Coder 30B-A3B (Q6, MoE)",
           "tool_call": true,
