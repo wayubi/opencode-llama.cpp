@@ -52,6 +52,7 @@ services:
       - "-ctv"
       - "${CACHE_TYPE_V:-q4_0}"
       - "--no-mmap"
+      - "--no-mmproj"
       - "--spec-type"
       - "${SPEC_TYPE:-draft-mtp}"
       - "--spec-draft-n-max"
@@ -66,6 +67,8 @@ services:
       - "${MIN_P:-0.05}"
       - "--presence-penalty"
       - "${PRESENCE_PENALTY:-0.0}"
+      - "--repeat_penalty"
+      - "${REPEAT_PENALTY:-0.0}"
 
 volumes:
   opencode-llama.cpp_hf-cache:
