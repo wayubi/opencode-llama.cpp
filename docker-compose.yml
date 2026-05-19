@@ -56,6 +56,16 @@ services:
       - "${SPEC_TYPE:-draft-mtp}"
       - "--spec-draft-n-max"
       - "${SPEC_DRAFT_N_MAX:-2}"
+      - "--temp"
+      - "${TEMP:-0.8}"
+      - "--top-p"
+      - "${TOP_P:-0.95}"
+      - "--top-k"
+      - "${TOP_K:-40}"
+      - "--min-p"
+      - "${MIN_P:-0.05}"
+      - "--presence-penalty"
+      - "${PRESENCE_PENALTY:-0.0}"
 
 volumes:
   opencode-llama.cpp_hf-cache:
