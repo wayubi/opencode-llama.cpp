@@ -1,58 +1,44 @@
-# syntax=docker/dockerfile:1
-
-# ──────────────────────────────────────────────
-# Stage 1: Build llama-server
-# ──────────────────────────────────────────────
 FROM nvidia/cuda:12.4.0-devel-ubuntu22.04 AS builder
 
-ARG PR_NUMBER=21343
 ARG BUILD_JOBS=6
-
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git cmake build-essential libcurl4-openssl-dev libssl-dev curl ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install GitHub CLI for PR checkout
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-        | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
-    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
-    echo "deb [arch=$(dpkg --print-architecture) \
-        signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
-        https://cli.github.com/packages stable main" \
-        > /etc/apt/sources.list.d/github-cli.list && \
-    apt-get update && apt-get install -y gh && \
+        git cmake build-essential libcurl4-openssl-dev libssl-dev curl \
+        wget gnupg2 ca-certificates libcurl4 libgomp1 && \
+    rm -f /etc/apt/sources.list.d/cuda*.list && \
+    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb && \
+    dpkg -i cuda-keyring_1.1-1_all.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libnccl2=2.20.5-1+cuda12.4 && \
+    ldconfig && \
     rm -rf /var/lib/apt/lists/*
 
-# Clone & checkout PR
-RUN git clone --depth 50 https://github.com/ggml-org/llama.cpp.git /tmp/llama-cpp-build
+# Clone latest master — MTP is merged, no PR checkout needed
+RUN git clone --depth 1 https://github.com/ggml-org/llama.cpp.git /tmp/llama-cpp-build
 
 WORKDIR /tmp/llama-cpp-build
 
-ARG GH_TOKEN=""
-RUN if [ -n "$GH_TOKEN" ]; then \
-        gh pr checkout ${PR_NUMBER}; \
-    else \
-        echo "No GH_TOKEN provided, falling back to git fetch" && \
-        git fetch origin pull/${PR_NUMBER}/head && \
-        git checkout FETCH_HEAD; \
-    fi
-
-# Apply PR #20050 patch (KV cache retry fix)
-RUN curl -sL https://github.com/ggml-org/llama.cpp/pull/20050.diff -o /tmp/20050.patch && \
-    git apply /tmp/20050.patch || echo "Patch may have conflicts or already applied"
-
-# Build llama-server with CUDA + curl support
-# Set up CUDA driver stub for linking (actual driver comes from host at runtime)
+# Set up CUDA driver stub for linking
 RUN ln -sf /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1 && \
     ln -sf /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/libcuda.so.1 && \
     ldconfig
+
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
-RUN cmake -B build \
+
+RUN rm -rf build
+
+# Build with CUDA + flash attention + MTP support
+# Note: LLAMA_CUDA → GGML_CUDA in recent llama.cpp
+RUN rm -rf build && cmake -B build \
+        -DGGML_CUDA=ON \
+        -DGGML_CUDA_FA=ON \
+        -DGGML_CUDA_FA_ALL_QUANTS=ON \
+        -DGGML_NCCL=OFF \
         -DLLAMA_CURL=ON \
-        -DLLAMA_CUDA=ON \
-        -DLLAMA_OPENSSL=ON \
+        -DCMAKE_C_FLAGS="-DGGML_NCCL=0" \
+        -DCMAKE_CXX_FLAGS="-DGGML_NCCL=0" \
         -DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/cuda/lib64/stubs -Wl,-rpath,/usr/local/cuda/lib64" \
     && cmake --build build --config Release -j${BUILD_JOBS} -- llama-server
 
@@ -60,10 +46,8 @@ RUN cmake -B build \
 # Stage 2: Runtime
 # ──────────────────────────────────────────────
 FROM ubuntu:24.04
-
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install CUDA runtime libraries (userspace only, no kernel modules)
 COPY --from=builder /usr/local/cuda/lib64/libcudart.so.* /usr/local/cuda/lib64/
 COPY --from=builder /usr/local/cuda/lib64/libcublas.so.* /usr/local/cuda/lib64/
 COPY --from=builder /usr/local/cuda/lib64/libcublasLt.so.* /usr/local/cuda/lib64/
@@ -75,17 +59,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
 
-# Copy llama-server binary
 COPY --from=builder /tmp/llama-cpp-build/build/bin/llama-server /usr/local/bin/llama-server
+COPY --from=builder /tmp/llama-cpp-build/build/bin/libggml-base.so /usr/local/lib/
+COPY --from=builder /tmp/llama-cpp-build/build/bin/libggml-cpu.so /usr/local/lib/
+COPY --from=builder /tmp/llama-cpp-build/build/bin/libggml-cuda.so /usr/local/lib/
+COPY --from=builder /tmp/llama-cpp-build/build/bin/libggml.so /usr/local/lib/
+COPY --from=builder /tmp/llama-cpp-build/build/bin/libllama-common.so /usr/local/lib/
+COPY --from=builder /tmp/llama-cpp-build/build/bin/libllama.so /usr/local/lib/
+COPY --from=builder /tmp/llama-cpp-build/build/bin/libmtmd.so /usr/local/lib/
 
-# Copy all shared libraries built by llama.cpp (libmtmd, libggml, etc.)
-COPY --from=builder /tmp/llama-cpp-build/build/bin/*.so* /usr/local/lib/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libnccl.so.* /usr/lib/x86_64-linux-gnu/
 
 RUN ldconfig
 
-# HuggingFace cache directory
 RUN mkdir -p /root/.cache/huggingface/hub
 
 EXPOSE 8089
 
+# --spec-type draft-mtp  (flag name after the master merge; was --spec-type mtp on the PR branch)
+# --spec-draft-n-max 3   (tune to 2-5 based on your acceptance rate; 3 is a safe start)
+# -fa on                 (flash attention — essential with MTP for prompt throughput)
+
+#ENTRYPOINT ["llama-server", \
+#    "--spec-type", "draft-mtp", \
+#    "--spec-draft-n-max", "3", \
+#    "-fa", "on"]
+
+# ENTRYPOINT ["tail", "-f", "/dev/null"]
 ENTRYPOINT ["llama-server"]
