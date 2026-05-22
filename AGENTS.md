@@ -44,7 +44,7 @@ llama/
 | Variable | Default | Description |
 |----------|---------|-------------|
 | MODEL | - | HuggingFace model (repo:quant) |
-| PORT | 8089 | Server port |
+| PORT | 8080 | Server port |
 | HOST | 0.0.0.0 | Listen address |
 | CTX | 32768 | Context size (tokens) |
 | NGLAYERS | 999 | GPU layers (999=all, 0=CPU) |
@@ -84,7 +84,7 @@ docker compose --env-file configs/gemma4-e4b-q5-bartowski-opencode.env up -d
 ssh ag@127.0.0.1 "cd ~/llama && docker compose --env-file configs/gemma4-e4b-q5-bartowski-opencode.env up -d"
 
 # Health check
-curl http://127.0.0.1:8089/health
+curl http://127.0.0.1:8080/health
 ```
 
 ## Build
@@ -118,7 +118,7 @@ docker compose up -d --build
 
 ## opencode Integration
 
-Config: `opencode.json` — provider `llama` at `http://127.0.0.1:8089/v1`
+Config: `opencode.json` — provider `llama` at `http://127.0.0.1:8080/v1`
 
 | opencode model ID | Config to load |
 |-------------------|----------------|

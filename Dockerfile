@@ -74,16 +74,7 @@ RUN ldconfig
 
 RUN mkdir -p /root/.cache/huggingface/hub
 
-EXPOSE 8089
-
-# --spec-type draft-mtp  (flag name after the master merge; was --spec-type mtp on the PR branch)
-# --spec-draft-n-max 3   (tune to 2-5 based on your acceptance rate; 3 is a safe start)
-# -fa on                 (flash attention — essential with MTP for prompt throughput)
-
-#ENTRYPOINT ["llama-server", \
-#    "--spec-type", "draft-mtp", \
-#    "--spec-draft-n-max", "3", \
-#    "-fa", "on"]
+EXPOSE 8080
 
 # ENTRYPOINT ["tail", "-f", "/dev/null"]
 ENTRYPOINT ["llama-server"]

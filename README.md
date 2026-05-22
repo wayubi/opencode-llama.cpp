@@ -16,7 +16,7 @@ Docker Compose setup for llama.cpp with CUDA support, optimized for running LLM 
 docker compose --env-file configs/gemma4-e4b-q5-bartowski-opencode.env up -d --build
 
 # Check status
-curl http://127.0.0.1:8089/health
+curl http://127.0.0.1:8080/health
 
 # View logs
 docker compose logs -f
@@ -38,7 +38,7 @@ docker compose up -d
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `MODEL` | HuggingFace repo:quant | `bartowski/google_gemma-4-E4B-it-GGUF:Q5_K_M` |
-| `PORT` | Server port | `8089` |
+| `PORT` | Server port | `8080` |
 | `HOST` | Listen address | `0.0.0.0` |
 | `CTX` | Context size | `131072` |
 | `NGLAYERS` | GPU layers (999=all, 0=CPU) | `999` |
@@ -113,7 +113,7 @@ docker compose up -d
     "npm": "@ai-sdk/openai-compatible",
     "name": "llama.cpp",
     "options": {
-      "baseURL": "http://127.0.0.1:8089/v1",
+      "baseURL": "http://127.0.0.1:8080/v1",
       "toolParser": [
         { "type": "hermes" },
         { "type": "raw-function-call" },
@@ -187,13 +187,13 @@ docker compose up -d
 
 ## API Endpoints
 
-- **WebUI:** http://127.0.0.1:8089
-- **Health:** http://127.0.0.1:8089/health
-- **OpenAI API:** http://127.0.0.1:8089/v1/chat/completions
+- **WebUI:** http://127.0.0.1:8080
+- **Health:** http://127.0.0.1:8080/health
+- **OpenAI API:** http://127.0.0.1:8080/v1/chat/completions
 
 ### Example API call
 ```bash
-curl http://127.0.0.1:8089/v1/chat/completions \
+curl http://127.0.0.1:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [{"role": "user", "content": "Hello!"}],

@@ -1,17 +1,25 @@
 services:
+  llama-build:
+    profiles: [build]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_JOBS: "20"
+    image: opencode-llama.cpp:latest
+
   llama-server:
+    profiles: [model]
     runtime: nvidia
     restart: unless-stopped
     image: opencode-llama.cpp:latest
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-    #   args:
-    #     BUILD_JOBS: "24"
     ports:
-      - "${PORT:-8089}:${PORT:-8089}"
+      - "${PORT:-8080}:${PORT:-8080}"
+    networks:
+      enhasa_network:
     volumes:
       - opencode-llama.cpp_hf-cache:/root/.cache/huggingface
+      - ./models.ini:/models.ini
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     ulimits:
@@ -19,58 +27,12 @@ services:
         soft: -1
         hard: -1
     command:
-      - "-hf"
-      - "${MODEL:-ggml-org/gemma-4-E4B-it-GGUF:Q4_K_M}"
-      - "--jinja"
-      - "-c"
-      - "${CTX:-32768}"
+      - "--models-preset"
+      - "/models.ini"
       - "--port"
-      - "${PORT:-8089}"
+      - "${PORT:-8080}"
       - "--host"
       - "${HOST:-0.0.0.0}"
-      - "-ngl"
-      - "${NGLAYERS:-50}"
-      - "-ot"
-      - "${CPUMOE:-exps=CPU}"
-      - "-fa"
-      - "${FLASHATTN:-off}"
-      - "-b"
-      - "${BATCH:-256}"
-      - "-ub"
-      - "${UBATCH:-256}"
-      - "-t"
-      - "${THREADS:-20}"
-      - "-tb"
-      - "${THREADS_BATCH:-20}"
-      - "--parallel"
-      - "${PARALLEL:-1}"
-      - "--mlock"
-      - "--fit"
-      - "off"
-      - "-ctk"
-      - "${CACHE_TYPE_K:-q4_0}"
-      - "-ctv"
-      - "${CACHE_TYPE_V:-q4_0}"
-      - "--no-mmap"
-      - "--no-mmproj"
-      - "--spec-type"
-      - "${SPEC_TYPE:-draft-mtp}"
-      - "--spec-draft-n-max"
-      - "${SPEC_DRAFT_N_MAX:-2}"
-      - "--spec-draft-p-min"
-      - "${SPEC_DRAFT_P_MIN:-0}"
-      - "--temp"
-      - "${TEMP:-0.8}"
-      - "--top-p"
-      - "${TOP_P:-0.95}"
-      - "--top-k"
-      - "${TOP_K:-40}"
-      - "--min-p"
-      - "${MIN_P:-0.05}"
-      - "--presence-penalty"
-      - "${PRESENCE_PENALTY:-0.0}"
-      - "--repeat-penalty"
-      - "${REPEAT_PENALTY:-0.0}"
 
 volumes:
   opencode-llama.cpp_hf-cache:
